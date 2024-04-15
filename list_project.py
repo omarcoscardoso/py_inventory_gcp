@@ -8,25 +8,22 @@
 # pip install -U google-api-python-client
 # pip install -U oauth2client
 
-import os
 import csv
+from src.zamp.common.credentials import service_account_key
 from google.oauth2 import service_account
 from googleapiclient import discovery
 
 # Inicializar variáveis
-dir_path = os.path.dirname(os.path.realpath(__file__)) # Busca o dir real
 count = 1 
 
 # Carregar credenciais do arquivo de serviço
-service_account_info = dir_path+'/credentials/'+'<NOME DO SEU ARQUIVO JSON COM A KEY>'
-credentials = service_account.Credentials.from_service_account_file(service_account_info)
+credentials = service_account.Credentials.from_service_account_file(service_account_key())
 
 # Construir serviços de API
 service = discovery.build('cloudresourcemanager', 'v1', credentials=credentials)
 request = service.projects().list()
 
 print('{:>3} {:<40} {:<30} {:<20}'.format('', 'PROJECT_ID', 'NAME', 'PROJECT_NUMBER'))
-
 
 while request is not None:
     response = request.execute()
