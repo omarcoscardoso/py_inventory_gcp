@@ -10,10 +10,10 @@
 #
 # Library Installation
 # pip install -U google-api-python-client
-# pip install -U oauth2client
 
 import os
 import csv
+from src.zamp.common.credentials import service_account_key
 from google.oauth2 import service_account
 from googleapiclient import discovery
 
@@ -22,8 +22,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 filename = dir_path+'/csv/'+'lista_GCP_k8s.csv'
 
 # Carregar credenciais do arquivo de serviço
-service_account_info = dir_path+'/credentials/'+'<NOME DO SEU ARQUIVO JSON COM A KEY>'
-credentials = service_account.Credentials.from_service_account_file(service_account_info)
+credentials = service_account.Credentials.from_service_account_file(service_account_key())
 
 # Construir serviços de API
 service = discovery.build('cloudresourcemanager', 'v1', credentials=credentials)
@@ -50,29 +49,36 @@ with open(filename, 'w', newline='') as csvfile:
             project_id = project['projectId']
             resources = service_container.projects().locations().clusters()
             request_gke = resources.list(parent='projects/'+project_id+'/locations/-', projectId=project_id)
-            response_gke = request_gke.execute()
+            try:
+                response_gke = request_gke.execute()
 
-            # Iterar sobre cada instância do cluster
-            for clusters in response_gke.get('clusters', []):
-                cluster_name = clusters['name']    
-                zone = clusters['zone']
-                diskSizeGb = clusters['nodeConfig']['diskSizeGb']
-                node_qt = clusters.get('currentNodeCount', 0)
-                autoscaling = clusters['autoscaling']['autoscalingProfile']
-                
-                # Conta quantidades de zonas
-                qt_locations = len(clusters['locations'])
+                # Iterar sobre cada instância do cluster
+                for clusters in response_gke.get('clusters', []):
+                    cluster_name = clusters['name']    
+                    zone = clusters['zone']
+                    diskSizeGb = clusters['nodeConfig']['diskSizeGb']
+                    node_qt = clusters.get('currentNodeCount', 0)
+                    autoscaling = clusters['autoscaling']['autoscalingProfile']
 
-                for pools in clusters['nodePools']:         
-                    node_type = pools['config']['machineType']
-                    node_name = pools['name']
-                                
-                    # Imprimir detalhes da instância e escrever no arquivo CSV
-                    print('{:>2} {:<28} {:<43} {:<40} {:<10} {:<20} {:<23} {:<5}'.
-                        format(count, project_id, cluster_name, node_name, node_qt, node_type, autoscaling, qt_locations))
+                    # Conta quantidades de zonas
+                    qt_locations = len(clusters['locations'])
 
-                    file_writer.writerow([project_id, cluster_name, node_name, node_qt, node_type, autoscaling, qt_locations])
-                    count += 1
+                    for pools in clusters['nodePools']:         
+                        node_type = pools['config']['machineType']
+                        node_name = pools['name']
 
+                        # Imprimir detalhes da instância e escrever no arquivo CSV
+                        print('{:>2} {:<28} {:<43} {:<40} {:<10} {:<20} {:<23} {:<5}'.
+                            format(count, project_id, cluster_name, node_name, node_qt, node_type, autoscaling, qt_locations))
+
+                        file_writer.writerow([project_id, cluster_name, node_name, node_qt, node_type, autoscaling, qt_locations])
+                        count += 1
+            except:
+                print('{:>2} {:<28} {:<43} {:<40} {:<10} {:<20} {:<23} {:<5}'.
+                    format(count, project_id, 'SEM API GKE', '', '', '', '', ''))
+
+                file_writer.writerow([project_id, 'SEM API GKE', '', '', '', '', ''])
+                count += 1
+        
         # Obter próxima página de projetos
         request = service.projects().list_next(previous_request=request, previous_response=response)
