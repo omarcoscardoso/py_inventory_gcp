@@ -32,6 +32,10 @@ A estrutura abaixo é um exemplo de como os scripts estão organizados, sendo qu
  ┣ 📂 csv (3)
  ┃ ┣ 📜result.csv
  ┃ ┗ 📜result1.csv
+ ┣ 📂 src (4)
+ ┃ ┣ 📂 zamp (5)
+ ┃ ┃ ┣ 📂 common (6)
+ ┃ ┃ ┣ 📂 utils (7)
  ┗ 📜README.md
 ```
 
@@ -39,10 +43,19 @@ A estrutura abaixo é um exemplo de como os scripts estão organizados, sendo qu
 Repositorio onde ficam todos os scripts e resultados.
 
 ### 2. credentials
-Para acessar os recursos do GCP é necessário uma autenticação, vamos utilizar uma service account para fazer isso, logo será necessário a criação de uma service account na organização ou no projeto para o correto funcionamento dos scripts 
+Para acessar os recursos do GCP é necessário uma autenticação, vamos utilizar uma service account para fazer isso, logo será necessário a criação de uma service account, com permissão de leitura, na organização ou no projeto para o correto funcionamento dos scripts 
 
 ### 3. csv
 Caso o script gere um arquivos csv, os mesmos devem ser armazenados aqui por organização, mas não serão guardados neste repositório, pois o diretório csv está apontado no .gitignore 
+
+### 4. src
+Diretório de source que incorpora recursos ao projeto atual
+
+### 5. zamp
+Diretório de domínio
+
+### 6. common
+Diretório com funções comuns entre os recursos do projeto
 <br>
 ___ 
 **Instalação das bibliotecas**
@@ -50,21 +63,11 @@ ___
 Será necessário ter o python instalado e fazer a instalação das libs google-api-python-client e oauth2client
 ```bash
 pip install -U google-api-python-client
-pip install -U oauth2client
 ```
 ___
 **Exemplo de utilização dos scripts:**
 ```py
-import os
-import csv
-from google.oauth2 import service_account
-from googleapiclient import discovery
-
-# Carregar credenciais do arquivo de serviço
-dir_path = os.path.dirname(os.path.realpath(__file__)) # Busca o dir real
-service_account_info = dir_path+'/credentials/'+'<NOME DO SEU ARQUIVO JSON COM A KEY>'
-credentials = service_account.Credentials.from_service_account_file(service_account_info)
-...
+python3 list_project.py
 ```
 ___
 ## Documentação
