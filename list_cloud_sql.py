@@ -10,10 +10,10 @@
 #
 # Library Installation
 # pip install -U google-api-python-client
-# pip install -U oauth2client
 
 import os
 import csv
+from src.zamp.common.credentials import service_account_key
 from google.oauth2 import service_account
 from googleapiclient import discovery
 
@@ -22,8 +22,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__)) # Busca o dir real
 filename = dir_path+'/csv/'+'lista_GCP_cloud_sql.csv'
 
 # Carregar credenciais do arquivo de serviço
-service_account_info = dir_path+'/credentials/'+'<NOME DO SEU ARQUIVO JSON COM A KEY>'
-credentials = service_account.Credentials.from_service_account_file(service_account_info)
+credentials = service_account.Credentials.from_service_account_file(service_account_key())
 
 # Construir serviços de API
 service = discovery.build('cloudresourcemanager', 'v1', credentials=credentials)
