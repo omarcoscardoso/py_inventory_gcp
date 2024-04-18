@@ -32,10 +32,10 @@ service_sql = discovery.build('sqladmin', 'v1beta4')
 # Abrir arquivo CSV para escrita
 with open(filename, 'w', newline='') as csvfile:
     file_writer = csv.writer(csvfile, delimiter=';')
-    file_writer.writerow(['PROJECT_ID', 'INSTANCIA', 'TIPO', 'IP PUBLIC', 'IP PRIVATE', 'TIER', 'DISK TYPE', 'SIZE Gb', 'REGION'])
+    file_writer.writerow(['ENV', 'PROJECT_ID', 'INSTANCIA', 'TIPO', 'IP PUBLIC', 'IP PRIVATE', 'TIER', 'DISK TYPE', 'SIZE Gb', 'REGION'])
 
-    print('{:>2} {:<25} {:<35} {:<24} {:<15} {:<15} {:<23} {:<10} {:<8} {:<10}'.
-          format(' ', 'PROJECT_ID', 'INSTANCIA', 'TIPO', 'IP PUBLIC', 'IP PRIVATE', 'TIER', 'DISK TYPE', 'SIZE Gb', 'REGION'))
+    print('{:>2} {:<4} {:<25} {:<35} {:<24} {:<15} {:<15} {:<23} {:<10} {:<8} {:<10}'.
+          format(' ', 'ENV', 'PROJECT_ID', 'INSTANCIA', 'TIPO', 'IP PUBLIC', 'IP PRIVATE', 'TIER', 'DISK TYPE', 'SIZE Gb', 'REGION'))
     
     count = 1
     # Recuperar lista de projetos
@@ -51,6 +51,15 @@ with open(filename, 'w', newline='') as csvfile:
             request_sql = resources.list(project=project_id)
             response_sql = request_sql.execute()
 
+            # Mapeamento de substrings para ambientes correspondentes
+            env_mapping = {'dev': 'DEV', 'prd': 'PRD', 'hml': 'HML'}
+            # Validação de ambiente pela descrição
+            env = ''
+            for substring, environment in env_mapping.items():
+                if substring in project_id:
+                    env = environment
+                    break
+            
             # Iterar sobre cada instância do SQL
             for instance in response_sql.get('items', []):
                 tier = instance['settings']['tier']
@@ -62,10 +71,10 @@ with open(filename, 'w', newline='') as csvfile:
                 ip_privado = next((ipaddress['ipAddress'] for ipaddress in instance.get('ipAddresses', []) if ipaddress['type'] == 'PRIVATE'), '')
 
                 # Imprimir detalhes da instância e escrever no arquivo CSV
-                print('{:>2} {:<25} {:<35} {:<24} {:<15} {:<15} {:<23} {:<10} {:<8} {:<10}'.
-                      format(count, project_id, instance['name'], instance['databaseInstalledVersion'], ip_publico, ip_privado, tier, diskType, diskSizeGb, location))
+                print('{:>2} {:<4} {:<25} {:<35} {:<24} {:<15} {:<15} {:<23} {:<10} {:<8} {:<10}'.
+                      format(count, env, project_id, instance['name'], instance['databaseInstalledVersion'], ip_publico, ip_privado, tier, diskType, diskSizeGb, location))
 
-                file_writer.writerow([project_id, instance['name'], instance['databaseInstalledVersion'], ip_publico, ip_privado, tier, diskType, diskSizeGb, location])
+                file_writer.writerow([env, project_id, instance['name'], instance['databaseInstalledVersion'], ip_publico, ip_privado, tier, diskType, diskSizeGb, location])
                 count += 1
 
         # Obter próxima página de projetos
