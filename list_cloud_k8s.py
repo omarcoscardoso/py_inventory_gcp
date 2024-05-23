@@ -31,10 +31,10 @@ service_container = discovery.build('container', 'v1')
 # Abrir arquivo CSV para escrita
 with open(filename, 'w', newline='') as csvfile:
     file_writer = csv.writer(csvfile, delimiter=';')
-    file_writer.writerow(['PROJECT_ID', 'CLUSTER', 'POOL', 'NOS', 'TYPE', 'AUTOSCALING', 'QT ZONAS'])
+    file_writer.writerow(['PROJECT_ID', 'CLUSTER', 'CLUSTER_VERSION', 'POOL', 'NOS', 'TYPE', 'AUTOSCALING', 'ZONAS'])
 
-    print('{:>2} {:<28} {:<43} {:<40} {:<10} {:<20} {:<23} {:<5}'.
-        format('', 'PROJECT_ID', 'CLUSTER', 'POOL', 'NOS', 'TYPE', 'AUTOSCALING', 'QT ZONAS'))
+    print('{:<3} {:<28} {:<40} {:<20} {:<35} {:<4} {:<18} {:<20} {:<5}'.
+        format('', 'PROJECT_ID', 'CLUSTER', 'CLUSTER_VERSION', 'POOL', 'NOS', 'TYPE', 'AUTOSCALING', 'ZONAS'))
     
     count = 1
 
@@ -53,8 +53,9 @@ with open(filename, 'w', newline='') as csvfile:
                 response_gke = request_gke.execute()
 
                 # Iterar sobre cada instância do cluster
-                for clusters in response_gke.get('clusters', []):
+                for clusters in response_gke.get('clusters', []):                    
                     cluster_name = clusters['name']    
+                    cluster_version = clusters['currentMasterVersion']
                     zone = clusters['zone']
                     diskSizeGb = clusters['nodeConfig']['diskSizeGb']
                     node_qt = clusters.get('currentNodeCount', 0)
@@ -63,18 +64,19 @@ with open(filename, 'w', newline='') as csvfile:
                     # Conta quantidades de zonas
                     qt_locations = len(clusters['locations'])
 
-                    for pools in clusters['nodePools']:         
+                    for pools in clusters['nodePools']:
                         node_type = pools['config']['machineType']
                         node_name = pools['name']
+                        node_version = pools['version']
 
                         # Imprimir detalhes da instância e escrever no arquivo CSV
-                        print('{:>2} {:<28} {:<43} {:<40} {:<10} {:<20} {:<23} {:<5}'.
-                            format(count, project_id, cluster_name, node_name, node_qt, node_type, autoscaling, qt_locations))
+                        print('{:<3} {:<28} {:<40} {:<20} {:<35} {:<4} {:<18} {:<20} {:<5}'.
+                            format(count, project_id, cluster_name, cluster_version, node_name, node_qt, node_type, autoscaling, qt_locations))
 
-                        file_writer.writerow([project_id, cluster_name, node_name, node_qt, node_type, autoscaling, qt_locations])
+                        file_writer.writerow([project_id, cluster_name, cluster_version, node_name, node_qt, node_type, autoscaling, qt_locations])
                         count += 1
             except:
-                print('{:>2} {:<28} {:<43} {:<40} {:<10} {:<20} {:<23} {:<5}'.
+                print('{:<3} {:<28} {:<40} {:<20} {:<35} {:<4} {:<18} {:<5}'.
                     format(count, project_id, 'SEM API GKE', '', '', '', '', ''))
 
                 file_writer.writerow([project_id, 'SEM API GKE', '', '', '', '', ''])
