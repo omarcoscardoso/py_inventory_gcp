@@ -66,14 +66,19 @@ with open(filename, 'w', newline='') as csvfile:
                 diskType = instance['settings']['dataDiskType']
                 diskSizeGb = instance['settings']['dataDiskSizeGb']
                 location = instance['settings']['locationPreference']['zone']
-                backup = "True" if instance['settings']['backupConfiguration']['enabled'] else "False"
-
+                if instance['settings']['backupConfiguration']['enabled']:
+                    backup = "True"
+                elif instance['instanceType'] == 'READ_REPLICA_INSTANCE':
+                    backup = "REPLICA"
+                else:
+                    backup = "False"
+                
                 ip_publico = next((ipaddress['ipAddress'] for ipaddress in instance.get('ipAddresses', []) if ipaddress['type'] == 'PRIMARY'), '')
                 ip_privado = next((ipaddress['ipAddress'] for ipaddress in instance.get('ipAddresses', []) if ipaddress['type'] == 'PRIVATE'), '')
 
                 # Imprimir detalhes da instância e escrever no arquivo CSV
                 print('{:>2} {:<4} {:<25} {:<30} {:<30} {:<6} {:<15} {:<15} {:<23} {:<10} {:<8} {:<10}'.
-                      format(count, env, project_id, instance['name'], instance['databaseInstalledVersion'], backup, ip_publico, ip_privado, tier, diskType, diskSizeGb, location))
+                    format(count, env, project_id, instance['name'], instance['databaseInstalledVersion'], backup, ip_publico, ip_privado, tier, diskType, diskSizeGb, location))
 
                 file_writer.writerow([env, project_id, instance['name'], instance['databaseInstalledVersion'], backup, ip_publico, ip_privado, tier, diskType, diskSizeGb, location])
                 count += 1
