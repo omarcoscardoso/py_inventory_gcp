@@ -14,12 +14,23 @@
 # pip install -U google-api-python-client
 # pip install -U oauth2client
 
+import os
+import csv
+from src.zamp.common.credentials import service_account_key
 from google.oauth2 import service_account
 from googleapiclient import discovery
-import csv
+
+# Inicializar variáveis
+dir_path = os.path.dirname(os.path.realpath(__file__))
+filename = dir_path+'/csv/'+'lista_redes_cloud_GCP.csv'
+
+def view_header():
+    print('{:>2} {:<25} {:<16}'.
+        format('', 'PROJECT_ID', 'NETWORK')) 
+
 
 # Carregar credenciais do arquivo de serviço
-credentials = service_account.Credentials.from_service_account_file('/home/cardoso/projetos/zamp/scripts/gcp_list/bk-br-noc-cloud-prd-b62c1803d09e.json')
+credentials = service_account.Credentials.from_service_account_file(service_account_key())
 
 # Construir serviços de API
 service = discovery.build('cloudresourcemanager', 'v1', credentials=credentials)
@@ -34,8 +45,7 @@ with open(filename, 'w', newline='') as csvfile:
     file_writer = csv.writer(csvfile, delimiter=';')
     # file_writer.writerow(['PROJECT_ID', 'INSTANCIA', 'TIPO', 'IP PUBLIC', 'IP PRIVATE', 'TIER', 'DISK TYPE', 'SIZE Gb', 'REGION'])
 
-    print('{:>2} {:<25}'.
-          format(' ', 'PROJECT_ID', 'NETWORK'))
+    view_header()
 
     # Recuperar lista de projetos
     request = service.projects().list()
@@ -49,17 +59,15 @@ with open(filename, 'w', newline='') as csvfile:
                 project_id = project['projectId']
                 request_networks = service_compute.networks().list(project=project_id)
                 response_networks = request_networks.execute()
-            
-                print(project_id)
 
                 # Iterar sobre cada instância do SQL
                 for networks in response_networks.get('items', []):                   
                     name_network = networks['name']
                     print(name_network)
-                    request_subnetworks = service_compute.subnetworks().aggregatedList(project=project_id)
-                    response_subnetworks = request_subnetworks.execute()
-                    for subnetworks in response_subnetworks.get('items', []):
-                        print(subnetworks)
+                    # request_subnetworks = service_compute.subnetworks().aggregatedList(project=project_id)
+                    # response_subnetworks = request_subnetworks.execute()
+                    # for subnetworks in response_subnetworks.get('items', []):
+                    #     print(subnetworks)
 
                     # print(networks['subnetworks'])
 
