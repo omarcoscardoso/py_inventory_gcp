@@ -1,3 +1,8 @@
+# Script para configuração do loggin
+#
+# autor: Marcos Cardoso
+# 
+# src/org/common/logger_config.py
 
 import logging
 import os

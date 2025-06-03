@@ -1,7 +1,6 @@
 # Script para listar redes na GCP
 # A lista será feita varrendo todos os projetos
 #
-# Zamp S.A.
 # autor: Marcos Cardoso
 # data: 03/04/2024
 # 
@@ -16,7 +15,7 @@
 
 import os
 import csv
-from src.zamp.common.credentials import service_account_key
+from src.org.common.credentials import service_account_key
 from google.oauth2 import service_account
 from googleapiclient import discovery
 

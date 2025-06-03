@@ -2,8 +2,6 @@
 # A lista será feita varrendo todos os projetos
 #
 # autor: Marcos Cardoso
-# data: 09/04/2024 (Data da criação original do script)
-# Refatorado para OAuth 2.0: 20/05/2025
 #
 # Documentation
 # https://developers.google.com/resources/api-libraries/documentation/compute/v1/python/latest/index.html
@@ -22,46 +20,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed # Importa para c
 from src.org.common.logger_config import setup_logging
 from src.org.common.credentials import get_user_credentials
 
-# ---------- CONFIGURAÇÃO ----------
-# SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-# PROJECT_ROOT = SCRIPT_DIR
-
-# Adiciona o diretório 'src' ao PYTHONPATH para permitir a importação de org.common.credentials
-# sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
-
 # Define o caminho completo para o arquivo CSV de saída
 dir_path = os.path.dirname(os.path.realpath(__file__))
 os.makedirs(os.path.join(dir_path, 'csv'), exist_ok=True)
 filename = os.path.join(dir_path, 'csv', 'lista_GCP_VM.csv')
 
 logger = setup_logging(dir_path,'list_cloud_vm.log')
-
-# # Define o caminho para o diretório de logs e o arquivo de log
-# log_dir = os.path.join(dir_path, 'log')
-# log_filename = os.path.join(log_dir, 'list_cloud_vm.log')
-# os.makedirs(log_dir, exist_ok=True)
-
-# # Configuração do logger
-# logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG)
-
-# # Cria um handler para o arquivo de log
-# file_handler = logging.FileHandler(log_filename)
-# file_handler.setLevel(logging.DEBUG) 
-
-# # Cria um handler para o console
-# console_handler = logging.StreamHandler(sys.stdout)
-# console_handler.setLevel(logging.ERROR)
-
-# # Define o formato das mensagens de log
-# formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-# file_handler.setFormatter(formatter)
-# console_handler.setFormatter(formatter)
-
-# # Adiciona os handlers ao logger
-# logger.addHandler(file_handler)
-# logger.addHandler(console_handler)
-# ---------- FIM DA CONFIGURAÇÃO ----------
 
 def time_now(message):
     now = datetime.datetime.now()

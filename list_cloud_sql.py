@@ -1,7 +1,6 @@
 # Script para listar instâncias de Cloud SQL no GCP
 # A lista será feita varrendo todos os projetos
 #
-# Zamp S.A.
 # autor: Marcos Cardoso
 # data: 02/04/2024
 # 
@@ -13,7 +12,7 @@
 
 import os
 import csv
-from src.zamp.common.credentials import service_account_key
+from src.org.common.credentials import service_account_key
 from google.oauth2 import service_account
 from googleapiclient import discovery
 
