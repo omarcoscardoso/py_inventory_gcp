@@ -36,7 +36,6 @@ A estrutura abaixo é um exemplo de como os scripts estão organizados, sendo qu
  ┣ 📂 src (5)
  ┃ ┣ 📂 org (6)
  ┃ ┃ ┣ 📂 common (7)
- ┃ ┃ ┣ 📂 utils (8)
  ┗ 📜README.md
 ```
 
@@ -44,7 +43,7 @@ A estrutura abaixo é um exemplo de como os scripts estão organizados, sendo qu
 Repositorio onde ficam todos os scripts e resultados.
 
 ### 2. credentials
-Para acessar os recursos do GCP é necessário uma autenticação, vamos utilizar uma service account para fazer isso, logo será necessário a criação de uma service account, com permissão de leitura, na organização ou no projeto para o correto funcionamento dos scripts 
+Para acessar os recursos do GCP é necessário uma autenticação, vamos utilizar o OAuth 2.0 com a conta de usuário para fazer isso, logo será necessário a habilitação de API em alum projeto no GCP, com permissão de leitura para o correto funcionamento dos scripts 
 
 ### 3. csv
 Caso o script gere um arquivos csv, os mesmos devem ser armazenados aqui por organização, mas não serão guardados neste repositório, pois o diretório csv está apontado no .gitignore 

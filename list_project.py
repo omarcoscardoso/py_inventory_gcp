@@ -6,11 +6,9 @@
 # Library Installation
 # pip install -U google-api-python-client
 # pip install -U oauth2client
-# pip install google-auth-oauthlib google-api-python-client
 
 import csv
 import os
-import logging
 from googleapiclient import discovery
 from src.org.common.credentials import get_user_credentials
 from src.org.common.logger_config import setup_logging
@@ -18,37 +16,37 @@ from src.org.common.logger_config import setup_logging
 dir_path = os.path.dirname(os.path.realpath(__file__))
 os.makedirs(os.path.join(dir_path, 'csv'), exist_ok=True)
 filename = os.path.join(dir_path, 'csv', 'lista_GCP_project.csv')
+logger = setup_logging(dir_path,'projects.log')
 
-logger = setup_logging(dir_path,'list_projects.log')
+header_format = '{:>3} {:<40} {:<30} {:<20}'
+header_list = 'PROJECT_ID', 'NAME', 'PROJECT_NUMBER'
 
-logger.info(f"teste 123")
-exit(1)
+logger.debug('Script iniciado: ')
 
 credentials = get_user_credentials()
 if not credentials :
-    logger.error('erro')
-
-
-
+    logger.error('Erro: Não foi possível obter as credenciais')
+    exit(1)
 
 def list_google_cloud_projects():
-    print("Credenciais obtidas. Construindo o serviço da API Cloud Resource Manager...")
+    print("Credenciais obtidas. Construindo o serviço da API Cloud Resource Manager... \n")
+    service = None
     try:
         # Constrói o serviço da API usando as credenciais obtidas
         service = discovery.build('cloudresourcemanager', 'v1', credentials=credentials)
         request = service.projects().list()
     except Exception as e:
-        print(f"\nERRO FATAL ao construir o serviço da API ou inicializar a requisição: {e}")
-        print("Verifique se a 'Cloud Resource Manager API' está habilitada no seu projeto do Google Cloud Console.")
+        logger.error(f"\nERRO FATAL ao construir o serviço da API ou inicializar a requisição: {e}")
+        logger.error("Verifique se a 'Cloud Resource Manager API' está habilitada no seu projeto do Google Cloud Console.")
         return
      
-    with open(filename, 'w', newline='') as csvfile:
+    with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
         file_writer = csv.writer(csvfile, delimiter=';')
         # Escreve o cabeçalho no arquivo CSV
-        file_writer.writerow(['PROJECT_ID', 'NAME', 'PROJECT_NUMBER'])
+        file_writer.writerow(header_list)
 
-        print('\n{:>3} {:<40} {:<30} {:<20}'.
-            format('', 'PROJECT_ID', 'NAME', 'PROJECT_NUMBER'))
+        print(header_format.
+            format('No.', *header_list))
         print('---' * 35)
     
         count = 1
@@ -57,15 +55,15 @@ def list_google_cloud_projects():
             try:
                 response = request.execute()
             except Exception as e:
-                print(f"\nERRO ao executar a requisição da API: {e}")
-                print("Isso pode ser um problema de permissão (sua conta pode não ter acesso aos projetos).")
-                print("Verifique as permissões da sua conta Google no Google Cloud Console.")
+                logger.error(f"\nERRO ao executar a requisição da API: {e}")
+                logger.error("Isso pode ser um problema de permissão (sua conta pode não ter acesso aos projetos).")
+                logger.error("Verifique as permissões da sua conta Google no Google Cloud Console.")
                 return
     
             projects = response.get('projects', [])
             if not projects:
                 if count == 1: # Se não há projetos na primeira página e o contador é 1
-                    print("Nenhum projeto encontrado ou sua conta não tem permissão para listar projetos.")
+                    logger.info("Nenhum projeto encontrado ou sua conta não tem permissão para listar projetos.")
                 break
             
             for project in projects:
@@ -73,8 +71,12 @@ def list_google_cloud_projects():
                 project_name = project.get('name', 'N/A')
                 project_number = project.get('projectNumber', 'N/A')
                 
-                print('{:>3} {:<40} {:<30} {:<20}'.format(count, project_id, project_name, project_number))
+                print(header_format.
+                    format(count, project_id, project_name, project_number))
+
                 file_writer.writerow([project_id, project_name, project_number])
+                
+                logger.info([project_id, project_name, project_number])
 
                 count += 1
             
