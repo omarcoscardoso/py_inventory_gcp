@@ -13,7 +13,6 @@ import os
 import csv
 import datetime
 import sys
-import logging
 from googleapiclient import discovery
 from googleapiclient import errors 
 from concurrent.futures import ThreadPoolExecutor, as_completed # Importa para concorrência
@@ -34,7 +33,7 @@ def time_now(message):
     now = datetime.datetime.now()
     date_format = now.strftime("%d-%m-%Y %H:%M:%S")
     print(f"{date_format} - {message}")
-    logger.info(f"{message} {date_format}")
+    logger.info(f"{message}")
 
 # Função para buscar instâncias de VM para um dado projeto e zona
 def fetch_instances_in_zone(project_id, zone, credentials):

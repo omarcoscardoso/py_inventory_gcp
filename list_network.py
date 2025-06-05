@@ -4,85 +4,134 @@
 # autor: Marcos Cardoso
 # data: 03/04/2024
 # 
-# Documentation
-# https://github.com/googleapis/google-api-python-client
-# https://developers.google.com/resources/api-libraries/documentation/cloudresourcemanager/v2/python/latest/
-# https://developers.google.com/resources/api-libraries/documentation/sqladmin/v1beta4/python/latest/sqladmin_v1beta4.instances.html#list
-#
-# Library Installation
-# pip install -U google-api-python-client
-# pip install -U oauth2client
 
+import datetime
 import os
 import csv
-from src.org.common.credentials import service_account_key
-from google.oauth2 import service_account
+import sys
 from googleapiclient import discovery
+from src.org.common.logger_config import setup_logging
+from src.org.common.credentials import get_user_credentials
 
-# Inicializar variáveis
+# Define o caminho completo para o arquivo CSV de saída
 dir_path = os.path.dirname(os.path.realpath(__file__))
-filename = dir_path+'/csv/'+'lista_redes_cloud_GCP.csv'
+os.makedirs(os.path.join(dir_path, 'csv'), exist_ok=True)
+filename = os.path.join(dir_path, 'csv', 'lista_GCP_network.csv')
+logger = setup_logging(dir_path,'network.log')
+# header_format = '{:>2} {:<35} {:<45} {:<25} {:<20} {:<40} {:<16}'
+header_format = '{:>2} {:<35} {:<45} {:<25} {:<20}'
+header_list = 'PROJECT_ID', 'VPC', 'NAME', 'REGION', 'RANGE', 'SECONDARY', 'GATEWAY'
 
-def view_header():
-    print('{:>2} {:<25} {:<16}'.
-        format('', 'PROJECT_ID', 'NETWORK')) 
+def header():
+    print(header_format.
+        format('', 'PROJECT_ID', 'VPC', 'REGION', 'RANGE'))
+    print('---' * 50)
 
+def time_now(message):
+    now = datetime.datetime.now()
+    date_format = now.strftime("%d-%m-%Y %H:%M:%S")
+    print(f"{date_format} - {message}")
+    logger.info(f"{message}")
 
-# Carregar credenciais do arquivo de serviço
-credentials = service_account.Credentials.from_service_account_file(service_account_key())
+def list_vpcs_and_subnets_all_projects(credentials):
+    """
+    Lista todas as VPCs e suas sub-redes em todos os projetos GCP acessíveis.
+    """
 
-# Construir serviços de API
-service = discovery.build('cloudresourcemanager', 'v1', credentials=credentials)
-service_compute = discovery.build('compute', 'v1')
+    # Constrói os serviços da API do Google Cloud:
+    # - cloudresourcemanager para listar projetos.
+    # - compute para listar recursos computacionais
+    resource_manager_service = discovery.build('cloudresourcemanager', 'v1', credentials=credentials)
+    compute_service = discovery.build('compute', 'v1', credentials=credentials)
 
-# Inicializar variáveis
-count = 1
-filename = 'lista_redes_cloud_GCP.csv'
+    try:
+        # Listar todos os projetos
+        projects_request = resource_manager_service.projects().list()
+     
+        time_now("Varrendo todos os projetos GCP para VPCs e Sub-redes...")
 
-# Abrir arquivo CSV para escrita
-with open(filename, 'w', newline='') as csvfile:
-    file_writer = csv.writer(csvfile, delimiter=';')
-    # file_writer.writerow(['PROJECT_ID', 'INSTANCIA', 'TIPO', 'IP PUBLIC', 'IP PRIVATE', 'TIER', 'DISK TYPE', 'SIZE Gb', 'REGION'])
+        header()
+        count = 1
+        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+            file_writer = csv.writer(csvfile, delimiter=';')
+            # Escreve o cabeçalho no arquivo CSV
+            file_writer.writerow(header_list)
+            while projects_request is not None:
+                projects_response = projects_request.execute()
+                for project in projects_response.get('projects', []):
+                    project_id = project['projectId']
+                    project_name = project.get('name', project_id)
+                    logger.info(f"--- Projeto: {project_name} (ID: {project_id}) ---")
+                    try:
+                        # Listar redes (VPCs) no projeto
+                        networks_request = compute_service.networks().list(project=project_id)
+                        networks_response = networks_request.execute()
+                        if not networks_response.get('items'):
+                            logger.info("  Nenhuma VPC encontrada neste projeto.")
+                        else:
+                            for network in networks_response.get('items', []):
+                                network_name = network['name']
+                                logger.info(f"  VPC: {network_name}")
+                                # Listar sub-redes para cada VPC
+                                subnetworks_aggregated_request = compute_service.subnetworks().aggregatedList(project=project_id)
+                                subnetworks_aggregated_response = subnetworks_aggregated_request.execute()
+                                found_subnets_for_vpc = False
+                                for region_scope in subnetworks_aggregated_response.get('items', {}).values():
+                                    for subnetwork in region_scope.get('subnetworks', []):
+                                        if subnetwork['network'].endswith(f'/networks/{network_name}'):
+                                            found_subnets_for_vpc = True
+                                            # Busca range de IPs secundarios
+                                            secondary_ips = subnetwork.get('secondaryIpRanges')
+                                            if secondary_ips:
+                                                secondary_ip_ranges = [item['ipCidrRange'] for item in secondary_ips]
+                                            else: 
+                                                secondary_ip_ranges = []
 
-    view_header()
+                                            writer_data = [project_name
+                                                        , network_name
+                                                        , subnetwork['name']
+                                                        , subnetwork['region'].split('/')[-1]
+                                                        , subnetwork['ipCidrRange']
+                                                        , secondary_ip_ranges
+                                                        , subnetwork['gatewayAddress']]
+                                            
+                                            logger.info(writer_data)
+                                            file_writer.writerow(writer_data)
 
-    # Recuperar lista de projetos
-    request = service.projects().list()
+                                            print(header_format.
+                                                format(count,
+                                                project_name,
+                                                network_name,
+                                                subnetwork['region'].split('/')[-1],
+                                                subnetwork['ipCidrRange']
+                                            ))
 
-    while request is not None:
-        response = request.execute()
+                                            count += 1
 
-        # Iterar sobre cada projeto
-        for project in response.get('projects', []):
-            if project['projectId'] == 'dp-c360-prd':
-                project_id = project['projectId']
-                request_networks = service_compute.networks().list(project=project_id)
-                response_networks = request_networks.execute()
+                                if not found_subnets_for_vpc:
+                                    logger.info("    Nenhuma sub-rede encontrada para esta VPC neste projeto (ou não acessível diretamente).")
+                    except Exception as e:
+                        logger.info(f"  Erro ao listar VPCs/Sub-redes para o projeto {project_id}: {e}")
 
-                # Iterar sobre cada instância do SQL
-                for networks in response_networks.get('items', []):                   
-                    name_network = networks['name']
-                    print(name_network)
-                    # request_subnetworks = service_compute.subnetworks().aggregatedList(project=project_id)
-                    # response_subnetworks = request_subnetworks.execute()
-                    # for subnetworks in response_subnetworks.get('items', []):
-                    #     print(subnetworks)
+                projects_request = resource_manager_service.projects().list_next(
+                    previous_request=projects_request, previous_response=projects_response
+                )
+    except Exception as e:
+        logger.error(f"Erro ao listar projetos: {e}")
 
-                    # print(networks['subnetworks'])
+try:
+    time_now('Script iniciado')
 
-                    # for peerings in networks.get('peerings', []):
-                        # print(peerings['name'])
-                        # print(peerings['state'])
-                    
-                #     ip_publico = next((ipaddress['ipAddress'] for ipaddress in instance.get('ipAddresses', []) if ipaddress['type'] == 'PRIMARY'), '')
-                #     ip_privado = next((ipaddress['ipAddress'] for ipaddress in instance.get('ipAddresses', []) if ipaddress['type'] == 'PRIVATE'), '')
+    credentials = get_user_credentials()
+    if not credentials:
+        logger.error("ERRO: Não foi possível obter as credenciais do usuário. Saindo do script.")
+        sys.exit(1)
 
-                    # Imprimir detalhes da instância e escrever no arquivo CSV
-                    # print('{:>2} {:<25}'.
-                        #   format(count, project_id, instance)
+    list_vpcs_and_subnets_all_projects(credentials)    
+    time_now("Varredura de projetos concluída.")
 
-                    # file_writer.writerow([project_id, instance['name'], instance['databaseInstalledVersion'], ip_publico, ip_privado, tier, diskType, diskSizeGb, location])
-                    count += 1
+except Exception as e:
+    logger.error(f"\nERRO FATAL DURANTE A EXECUÇÃO DO SCRIPT: {e}")
+    sys.exit(1)
 
-        # Obter próxima página de projetos
-        request = service.projects().list_next(previous_request=request, previous_response=response)
+time_now('Script finalizado')    
