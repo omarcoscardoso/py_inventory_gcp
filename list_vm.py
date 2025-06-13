@@ -28,7 +28,6 @@ logger = setup_logging(dir_path,'vm.log')
 header_format = '{:>2} {:<30} {:<45} {:<25} {:<18} {:<30} {:<20}'
 header_list = 'PROJECT_ID', 'VM', 'ZONA', 'IP PRIVADO', 'SO', 'STATUS'
 
-
 def time_now(message):
     now = datetime.datetime.now()
     date_format = now.strftime("%d-%m-%Y %H:%M:%S")
@@ -46,8 +45,11 @@ def fetch_instances_in_zone(project_id, zone, credentials):
         if "items" in instances:
             for instance in instances["items"]:
                 instance_vm = instance['name']
-                # Ignora VMs que fazem parte de clusters GKE (seus nomes começam com "gke-")
-                if not instance_vm.startswith("gke"):
+                # Ignora VMs que fazem parte de clusters GKE 
+                gke_instance = is_gke_instance(instance)
+                if gke_instance is True:
+                    logger.info(f"GKE => {gke_instance} => {instance_vm}")
+                else:
                     vm_zone = zone
                     status = instance['status']
                     ip_interno = 'N/A'
@@ -80,6 +82,27 @@ def fetch_instances_in_zone(project_id, zone, credentials):
     except Exception as e:
         logger.debug(f"  AVISO: Falha inesperada ao listar VMs em '{project_id}' na zona '{zone}': {e}")
         return []
+
+def is_gke_instance(instance):
+    # Verificar 'labels' nos metadados
+    if 'labels' in instance:
+        labels = instance['labels']
+        if 'goog-k8s-cluster-name' in labels or 'goog-k8s-node-pool-name' in labels:
+            return True
+
+    if 'metadata' in instance and 'items' in instance['metadata']:
+        for item in instance['metadata']['items']:
+            key = item.get('key')
+            value = item.get('value', '')
+            
+            if key == 'created-by' and 'instanceGroupManagers' in value:
+                return True
+            if key == 'cluster-name' and value:
+                return True
+            if key == 'kube-labels' and value:
+                return True
+
+    return False
 
 # Início da execução do script
 time_now('Script iniciado: ')
@@ -130,7 +153,7 @@ try:
 
                         # Usa ThreadPoolExecutor para buscar instâncias em paralelo para cada zona
                         # max_workers=10 é um valor inicial, pode ser ajustado para otimizar o desempenho
-                        with ThreadPoolExecutor(max_workers=400) as executor:
+                        with ThreadPoolExecutor(max_workers=1000) as executor:
                             # Mapeia futures para suas respectivas zonas para melhor tratamento de erros/logs
                             future_to_zone = {executor.submit(fetch_instances_in_zone, project_id, zone, credentials): zone for zone in available_zones}
 
