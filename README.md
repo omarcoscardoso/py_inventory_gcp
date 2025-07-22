@@ -57,7 +57,7 @@ Salve o JSON, no diretório __credentials__ com o nome de __client_secrets.json_
 ___
 
 ### 3. csv
-Caso o script gere um arquivos csv, os mesmos devem ser armazenados aqui por organização, mas não serão guardados neste repositório, pois o diretório csv está apontado no .gitignore 
+Os scripts devem gerar um arquivos csv para cada relatório, os mesmos são armazenados aqui por organização.
 
 ### 4. log
 Diretório de logs
