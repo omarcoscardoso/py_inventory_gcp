@@ -57,7 +57,7 @@ def list_google_cloud_projects():
             except Exception as e:
                 logger.error(f"\nERRO ao executar a requisição da API: {e}")
                 logger.error("Isso pode ser um problema de permissão (sua conta pode não ter acesso aos projetos).")
-                logger.error("Verifique as permissões da sua conta Google no Google Cloud Console.")
+                logger.error("Verifique se a 'Cloud Resource Manager API' está habilitada no seu projeto do Google Cloud Console.")
                 return
     
             projects = response.get('projects', [])
