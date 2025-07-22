@@ -1,9 +1,7 @@
 <p align="center">
 <img src="https://db0dce98.delivery.rocketcdn.me/en/files/2024/03/API-Google-Cloud-Platform.png" width="300" height="140">
 </p>
-
 Data: 2025-06-03
-
 <br>
 <div style="display: inline_block">
 <br>
