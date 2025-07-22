@@ -43,7 +43,18 @@ A estrutura abaixo é um exemplo de como os scripts estão organizados, sendo qu
 Repositorio onde ficam todos os scripts e resultados.
 
 ### 2. credentials
-Para acessar os recursos do GCP é necessário uma autenticação, vamos utilizar o OAuth 2.0 com a conta de usuário para fazer isso, logo será necessário a habilitação de API em alum projeto no GCP, com permissão de leitura para o correto funcionamento dos scripts 
+Para acessar os recursos do GCP é necessário uma autenticação, vamos utilizar o OAuth 2.0 com a conta de usuário para fazer isso, logo será necessário a habilitação de API em um projeto no GCP para o correto funcionamento dos scripts.
+___
+No seu projeto GCP vá até:
+
+    "APIs e serviços" >> "Credenciais" >> "+ Criar credenciais"
+
+Ao criar uma nova credencial de acesso, escolha o tipo "ID do cliente OAuth" e no formulário de configuração do cliente escolha o tipo de aplicativo "App para computador", defina um nome para o cliente e clique em "Criar", será exibido um popup com os dados de criação do cliente, baixe o JSON.
+
+- _IMPORTANTE salvar o JSON, pois não é possível baixar ele novamente depois que o cliente é criado e o popup fechado_.
+
+Salve o JSON, no diretório __credentials__ com o nome de __client_secrets.json__, isso é necessário para que no momento da validação de credencial os scripts possam buscar corretamente as permissões para a conta do GCP que está acessando os recursos.
+___
 
 ### 3. csv
 Caso o script gere um arquivos csv, os mesmos devem ser armazenados aqui por organização, mas não serão guardados neste repositório, pois o diretório csv está apontado no .gitignore 
